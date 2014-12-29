@@ -2,7 +2,7 @@
 local gears = require("gears")
 local awful = require("awful")
 awful.rules = require("awful.rules")
-require("awful.autofocus")
+local autofocus = require("awful.autofocus")
 -- Widget and layout library
 local wibox = require("wibox")
 -- Theme handling library
@@ -11,8 +11,6 @@ local beautiful = require("beautiful")
 local naughty = require("naughty")
 local menubar = require("menubar")
 local common = require("awful.widget.common")
--- Load Debian menu entries
-require("debian.menu")
 
 
 function jarradTasklistUpdate(w, buttons, label, data, objects)
@@ -25,7 +23,6 @@ function jarradTasklistUpdate(w, buttons, label, data, objects)
             iconBox = cache.iconBox
             windowNameBox = cache.windowNameBox
             bgBox = cache.bgBox
-            m   = cache.m
             windowControlsBox = cache.windowControlsBox
             closeImageBox = cache.closeImageBox
             windowButton = cache.windowButton
@@ -53,8 +50,7 @@ function jarradTasklistUpdate(w, buttons, label, data, objects)
                 iconBox = iconBox,
                 windowNameBox = windowNameBox,
                 bgBox = bgBox,
-                m   = m,
-                windowTitleBox = windowTitleBox,
+								windowControlsBox = windowControlsBox,
                 closeImageBox = closeImageBox,
                 windowButton = windowButton
             }
@@ -103,14 +99,14 @@ do
 end
 -- }}}
 
-awful.util.spawn_with_shell("compton --config /home/jarrad/.config/compton.conf &")
-awful.util.spawn_with_shell("xfce4-panel -d &")
+awful.util.spawn_with_shell("compton --config /home/jarrad/.config/compton.conf")
+-- awful.util.spawn_with_shell("xfce4-panel -d &")
 -- {{{ Variable definitions
 -- Themes define colours, icons, font and wallpapers.
-beautiful.init("/usr/share/awesome/themes/default/theme.lua")
+beautiful.init("/usr/local/share/awesome/themes/default/theme.lua")
 
 -- This is used later as the default terminal and editor to run.
-terminal = "konsole"
+terminal = "x-terminal-emulator"
 editor = os.getenv("EDITOR") or "editor"
 editor_cmd = terminal .. " -e " .. editor
 
@@ -122,7 +118,7 @@ editor_cmd = terminal .. " -e " .. editor
 modkey = "Mod4"
 
 -- Table of layouts to cover with awful.layout.inc, order matters.
-local layouts =
+awful.layout.layouts =
 {
     awful.layout.suit.floating,
     awful.layout.suit.tile,
@@ -131,11 +127,6 @@ local layouts =
     awful.layout.suit.tile.top,
     awful.layout.suit.fair,
     awful.layout.suit.fair.horizontal,
---    awful.layout.suit.spiral,
---    awful.layout.suit.spiral.dwindle,
---    awful.layout.suit.max,
---    awful.layout.suit.max.fullscreen,
---    awful.layout.suit.magnifier
 
 }
 -- }}}
@@ -153,7 +144,7 @@ end
 tags = {}
 for s = 1, screen.count() do
     -- Each screen has its own tag table.
-    tags[s] = awful.tag({ 1, 2, 3, 4, 5, 6, 7, 8, 9 }, s, layouts[2])
+    tags[s] = awful.tag({ 1, 2, 3, 4, 5, 6, 7, 8, 9 }, s, awful.layout.layouts[2])
 end
 -- }}}
 
@@ -167,7 +158,7 @@ myawesomemenu = {
 }
 
 mymainmenu = awful.menu({ items = { { "awesome", myawesomemenu, beautiful.awesome_icon },
-                                    { "Debian", debian.menu.Debian_menu.Debian },
+                                   -- { "Debian", debian.menu.Debian_menu.Debian },
                                     { "open terminal", terminal }
                                   }
                         })
@@ -240,10 +231,10 @@ for s = 1, screen.count() do
     -- We need one layoutbox per screen.
     mylayoutbox[s] = awful.widget.layoutbox(s)
     mylayoutbox[s]:buttons(awful.util.table.join(
-                           awful.button({ }, 1, function () awful.layout.inc(layouts, 1) end),
-                           awful.button({ }, 3, function () awful.layout.inc(layouts, -1) end),
-                           awful.button({ }, 4, function () awful.layout.inc(layouts, 1) end),
-                           awful.button({ }, 5, function () awful.layout.inc(layouts, -1) end)))
+                           awful.button({ }, 1, function () awful.layout.inc( 1) end),
+                           awful.button({ }, 3, function () awful.layout.inc(-1) end),
+                           awful.button({ }, 4, function () awful.layout.inc( 1) end),
+                           awful.button({ }, 5, function () awful.layout.inc(-1) end)))
     -- Create a taglist widget
     mytaglist[s] = awful.widget.taglist(s, awful.widget.taglist.filter.all, mytaglist.buttons)
 
@@ -323,8 +314,8 @@ globalkeys = awful.util.table.join(
     awful.key({ modkey, "Shift"   }, "l",     function () awful.tag.incnmaster(-1)      end),
     awful.key({ modkey, "Control" }, "h",     function () awful.tag.incncol( 1)         end),
     awful.key({ modkey, "Control" }, "l",     function () awful.tag.incncol(-1)         end),
-    awful.key({ modkey,           }, "space", function () awful.layout.inc(layouts,  1) end),
-    awful.key({ modkey, "Shift"   }, "space", function () awful.layout.inc(layouts, -1) end),
+    awful.key({ modkey,           }, "space", function () awful.layout.inc( 1) end),
+    awful.key({ modkey, "Shift"   }, "space", function () awful.layout.inc(-1) end),
 
     awful.key({ modkey, "Control" }, "n", awful.client.restore),
 
@@ -358,7 +349,7 @@ clientkeys = awful.util.table.join(
     awful.key({ modkey,           }, "m",
         function (c)
             c.maximized_horizontal = not c.maximized_horizontal
-            c.maximized_vertical   = not c.maximized_vertical
+            c.maximized_vertical   = c.maximized_horizontal
         end),
 		awful.key({	modkey,						}, "s",			function (c) c.sticky = not c.sticky					end),
     awful.key({modkey,            }, "d",     function (c) c.below = not c.below end)
@@ -420,6 +411,20 @@ root.keys(globalkeys)
 
 -- {{{ Rules
 -- Rules to apply to new clients (through the "manage" signal).
+
+local floaters = {
+	{ class = "MPlayer" },
+	{ class = "pinentry" },
+	{ class = "gimp" },
+	{ class = "Digikam", name = "Moving" },
+	{ name = "Video Display" },
+	{ class = "Xfrun4" },
+	{ class = "Operapluginwrapper-native" },
+	{ class = "Dolphin", name = "Copying "},
+	{ class = "Thunar", name = "File Operation Progress" },
+	{ name = "Whisker Menu" },
+}
+
 awful.rules.rules = {
     -- All clients will match this rule.
     { rule = { },
@@ -429,90 +434,57 @@ awful.rules.rules = {
                      raise = true,
                      keys = clientkeys,
                      size_hints_honor = true,
-                     buttons = clientbuttons } },
-    { rule = { class = "MPlayer" },
-      properties = { floating = true } },
-    { rule = { class = "pinentry" },
-      properties = { floating = true } },
-    { rule = { class = "gimp" },
-      properties = { floating = true } },
-    { rule = { class = "Digikam", name = "Moving" },
-      properties = { floating = true } },
-    { rule = { name = "Video Display"},
-      properties = { floating = true } },
-    { rule = { class = "Xfrun4" } ,
-      properties = { floating = true  } },
-    { rule = { class = "Operapluginwrapper-native" },
-      properties = { floating = true } },
-    { rule = { class = "Dolphin" },
-      --rule_any = {name = "Moving ", name = "Copying "},
-      properties = { floating = true } },
-    { rule = { class = "Thunar", name = "File Operation Progress" } ,
-      properties = { floating = true } },
-    { rule = { name = "Whisker Menu" },
-      properties = { floating = true } },
-    -- Set Firefox to always map on tags number 2 of screen 1.
-    -- { rule = { class = "Firefox" },
-    --   properties = { tag = tags[1][2] } },
+                     buttons = clientbuttons }
+		},
+    
 	-- KDE --
-    { rule = { class = "Plasma" },
+    {
+			rule_any = { class = { "Plasma-desktop", "pinentry" },
+				properties = {
+					floating = true,
+					size_hints_honor = true,
+					maximized_horizontal = false,
+				 -- maximized_vertical = false,
+				 -- ontop = true,
+				}
+			}
+		},
+
+    {
+			rule = { class="Xfdesktop", name = "Desktop" },
       properties = {
-        floating = true,
-        sticky = true,
-        size_hints_honor = true
-      } },
-    { rule_any = { class = { "Plasma-desktop", "pinentry" },
-      properties = {
-        floating = true,
-        size_hints_honor = true,
-        maximized_horizontal = false,
-       -- maximized_vertical = false,
-       -- ontop = true,
-        
-        } } },
-    { rule = {class = "plasmashell"},
-      properties = {
-        floating = true,
-        sticky = true,
-        size_hints_honor = true
-    }  },
-    { rule = { class="Xfdesktop", name = "Desktop" },
-      properties = {
-        --floating = true,
-   --     ontop = false,
-   --     above = false,
-  --      below = true,
+			--floating = true,
+			--ontop = false,
+			--above = false,
+			--below = true,
       border_width = 0,
---	fullscreen = false
-} },
-    { rule = { role = "Panel" },
-      properties = {
-        --ontop = true,
-      } },
+			--fullscreen = false
+			}
+		},
   }
+	
+	for i,r in pairs(floaters) do 
+		table.insert(awful.rules.rules, { rule = r, properties = {floating=true} })
+	end
+	
 -- }}}
 
 -- {{{ Signals
 -- Signal function to execute when a new client appears.
-client.connect_signal("manage", function (c, startup)
-    -- Enable sloppy focus
-    c:connect_signal("mouse::enter", function(c)
-        if awful.layout.get(c.screen) ~= awful.layout.suit.magnifier
-            and awful.client.focus.filter(c) then
-            client.focus = c
-        end
-    end)
-
-    if not startup then
+client.connect_signal("manage", function (c)
+    if not awesome.startup then
         -- Set the windows at the slave,
         -- i.e. put it at the end of others instead of setting it master.
-        -- awful.client.setslave(c)
+        awful.client.setslave(c)
 
         -- Put windows in a smart way, only if they does not set an initial position.
         if not c.size_hints.user_position and not c.size_hints.program_position then
             awful.placement.no_overlap(c)
             awful.placement.no_offscreen(c)
         end
+    elseif not c.size_hints.user_position and not c.size_hints.program_position then
+        -- Prevent clients from being unreachable after screen count change
+        awful.placement.no_offscreen(c)
     end
 
     if c.class == "Xfdesktop" and c.name == "Desktop" then
@@ -578,6 +550,15 @@ client.connect_signal("manage", function (c, startup)
     end
 end)
 
+-- Enable sloppy focus
+client.connect_signal("mouse::enter", function(c)
+    if awful.layout.get(c.screen) ~= awful.layout.suit.magnifier
+        and awful.client.focus.filter(c) then
+        client.focus = c
+    end
+end)
+
 client.connect_signal("focus", function(c) c.border_color = beautiful.border_focus end)
 client.connect_signal("unfocus", function(c) c.border_color = beautiful.border_normal end)
 -- }}}
+
