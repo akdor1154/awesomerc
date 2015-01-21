@@ -72,7 +72,6 @@ end
 
 
 
--- lain = require("lain")
 
 -- {{{ Error handling
 -- Check if awesome encountered an error during startup and fell back to
@@ -453,12 +452,7 @@ awful.rules.rules = {
     {
 			rule = { class="Xfdesktop", name = "Desktop" },
       properties = {
-			--floating = true,
-			--ontop = false,
-			--above = false,
-			--below = true,
       border_width = 0,
-			--fullscreen = false
 			}
 		},
   }
