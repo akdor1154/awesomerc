@@ -251,7 +251,7 @@ for s = 1, screen.count() do
     mytasklist[s] = awful.widget.tasklist(s, awful.widget.tasklist.filter.currenttags, mytasklist.buttons, false, jarradTasklistUpdate)
 
     -- Create the wibox
-    mywibox[s] = awful.wibox({above = true,  align = "center", position = "top", screen = s, width = 1200, height = 25 })
+    mywibox[s] = awful.wibox({above = true,  align = "center", position = "top", screen = s, width = ((s == 1) and screen[s].geometry.width* 0.6 or screen[s].geometry.width), height = 25 })
 
     -- Widgets that are aligned to the left
 	local left_layout = wibox.layout.fixed.horizontal()
