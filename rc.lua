@@ -98,7 +98,7 @@ do
 end
 -- }}}
 
-awful.util.spawn_with_shell("compton --config /home/jarrad/.config/compton.conf")
+awful.util.spawn({"comptonWait.sh", "--config", "/home/jarrad/.config/compton.conf"})
 -- awful.util.spawn_with_shell("xfce4-panel -d &")
 -- {{{ Variable definitions
 -- Themes define colours, icons, font and wallpapers.
