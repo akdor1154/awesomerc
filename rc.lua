@@ -56,7 +56,7 @@ function jarradTasklistUpdate(w, buttons, label, data, objects)
             }
         end
 
-        local text, bg, bg_image, icon = label(o)
+        local text, bg, bg_image, icon = label(o, windowNameBox)
         -- The text might be invalid, so use pcall
         if not pcall(windowNameBox.set_markup, windowNameBox, text) then
             windowNameBox:set_markup("<i>&lt;Invalid text&gt;</i>")
@@ -102,7 +102,7 @@ awful.util.spawn_with_shell("compton --config /home/jarrad/.config/compton.conf"
 -- awful.util.spawn_with_shell("xfce4-panel -d &")
 -- {{{ Variable definitions
 -- Themes define colours, icons, font and wallpapers.
-beautiful.init("/usr/local/share/awesome/themes/default/theme.lua")
+beautiful.init("/home/jarrad/.config/awesome/themes/default/theme.lua")
 
 -- This is used later as the default terminal and editor to run.
 terminal = "x-terminal-emulator"
@@ -130,6 +130,13 @@ awful.layout.layouts =
 }
 -- }}}
 
+local sortedScreens = {}
+for i = 1, screen.count() do
+	sortedScreens[i] = screen[i]
+end
+
+table.sort(sortedScreens, function(s1, s2) return s1.geometry.x < s2.geometry.x end)
+
 -- {{{ Wallpaper
 if beautiful.wallpaper then
     for s = 1, screen.count() do
@@ -143,7 +150,15 @@ end
 tags = {}
 for s = 1, screen.count() do
     -- Each screen has its own tag table.
-    tags[s] = awful.tag({ 1, 2, 3, 4, 5, 6, 7, 8, 9 }, s, awful.layout.layouts[2])
+    local screenLayout
+    if sortedScreens[s].geometry.width < sortedScreens[s].geometry.height then
+	screenLayout = awful.layout.suit.tile.top
+    elseif s == 1 then
+	screenLayout = awful.layout.suit.tile.left
+    else
+        screenLayout = awful.layout.suit.tile
+    end
+    tags[sortedScreens[s].index] = awful.tag({ 1, 2, 3, 4, 5, 6, 7, 8, 9 }, sortedScreens[s].index, screenLayout)
 end
 -- }}}
 
@@ -402,7 +417,9 @@ end
 clientbuttons = awful.util.table.join(
     awful.button({ }, 1, function (c) client.focus = c; c:raise() end),
     awful.button({ modkey }, 1, awful.mouse.client.move),
-    awful.button({ modkey }, 3, awful.mouse.client.resize))
+    awful.button({ modkey }, 3, awful.mouse.client.resize),
+    awful.button({ }, 8, awful.titlebar.show, awful.titlebar.hide)
+)
 
 -- Set keys
 root.keys(globalkeys)
@@ -427,8 +444,8 @@ local floaters = {
 awful.rules.rules = {
     -- All clients will match this rule.
     { rule = { },
-      properties = { border_width = beautiful.border_width,
-                     border_color = beautiful.border_normal,
+      properties = { border_width = 0,
+                     border_color = 0,
                      focus = awful.client.focus.filter,
                      raise = true,
                      keys = clientkeys,
@@ -498,7 +515,7 @@ client.connect_signal("manage", function (c)
       --c:geometry( { x = c.x + 46 } )
     end
 
-    local titlebars_enabled = false
+    local titlebars_enabled = true
     if titlebars_enabled and (c.type == "normal" or c.type == "dialog") then
         -- buttons for the titlebar
         local buttons = awful.util.table.join(
@@ -540,7 +557,10 @@ client.connect_signal("manage", function (c)
         layout:set_right(right_layout)
         layout:set_middle(middle_layout)
 
+	c.titlebar_enabled = false
+	print("made titlebar")
         awful.titlebar(c):set_widget(layout)
+	awful.titlebar.hide(c)
     end
 end)
 
